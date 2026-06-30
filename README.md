@@ -19,19 +19,24 @@ A lightweight, modular **rate limiting library** for [FastAPI](https://fastapi.t
 ## Project Structure
 
 ```
-rateguard/
-├── algorithms/
-│   ├── __init__.py
-│   └── fixed_window.py       # Fixed Window rate limiting algorithm
-├── core/
-│   ├── limiter.py            # RateLimiter — orchestrates algorithm checks
-│   ├── policy.py             # RateLimitPolicy — limit & window config
-│   └── resolver.py           # KeyResolver — identifies the client
-├── decorators/
-│   └── decorator.py          # @limit decorator — the main public API
-├── storage/
-│   └── storage.py            # MemoryStorage — in-memory key/value store
-├── test.py                   # Example FastAPI app using RateGuard
+rateguard/                        ← project root
+├── rateguard/                    ← installable Python package
+│   ├── __init__.py               # Public API surface
+│   ├── py.typed                  # PEP 561 type marker
+│   ├── algorithms/
+│   │   └── fixed_window.py       # Fixed Window rate limiting algorithm
+│   ├── core/
+│   │   ├── limiter.py            # RateLimiter — orchestrates algorithm checks
+│   │   ├── policy.py             # RateLimitPolicy — limit & window config
+│   │   └── resolver.py           # KeyResolver — identifies the client
+│   ├── decorators/
+│   │   └── decorator.py          # @limit decorator — the main public API
+│   └── storage/
+│       └── storage.py            # MemoryStorage — in-memory key/value store
+├── examples/
+│   └── basic_usage.py            # Example FastAPI app
+├── pyproject.toml                # Package metadata & build config
+├── setup.py                      # Editable install shim
 ├── requirements.txt
 └── README.md
 ```
@@ -40,12 +45,20 @@ rateguard/
 
 ## Installation
 
-Clone the repository and install the dependencies:
+### From source (recommended for development)
 
 ```bash
 git clone https://github.com/AdeelMalik22/rateguard.git
 cd rateguard
-pip install -r requirements.txt
+pip install -e .
+```
+
+The `-e` flag installs it in **editable mode** — any changes you make to the source are reflected immediately without reinstalling.
+
+### From PyPI *(once published)*
+
+```bash
+pip install rateguard
 ```
 
 ---
@@ -54,7 +67,7 @@ pip install -r requirements.txt
 
 ```python
 from fastapi import FastAPI, Request
-from decorators.decorator import limit
+from rateguard import limit
 
 app = FastAPI()
 
@@ -72,7 +85,7 @@ def hello_route(request: Request):
 ### Run the server
 
 ```bash
-uvicorn test:app --reload
+uvicorn examples.basic_usage:app --reload
 ```
 
 ---
@@ -90,6 +103,8 @@ uvicorn test:app --reload
 #### Basic — 3 requests per 10 seconds
 
 ```python
+from rateguard import limit
+
 @limit(requests=3, window=10)
 def my_endpoint(request: Request):
     return {"status": "ok"}
@@ -98,6 +113,8 @@ def my_endpoint(request: Request):
 #### Custom Key Resolver
 
 ```python
+from rateguard import limit
+
 def resolve_by_api_key(*args, **kwargs):
     request = kwargs.get("request")
     return request.headers.get("X-API-Key", "anonymous")
@@ -117,9 +134,9 @@ Request
   ▼
 @limit decorator
   │
-  ├─► KeyResolver.resolve()     → Identifies client (user ID or IP)
+  ├─► KeyResolver.resolve()       → Identifies client (user ID or IP)
   │
-  ├─► RateLimiter.check()       → Delegates to the algorithm
+  ├─► RateLimiter.check()         → Delegates to the algorithm
   │
   ├─► FixedWindowLimiter.allow()
   │     ├─ Fetch record from MemoryStorage
@@ -162,7 +179,7 @@ Counts requests within a fixed time window. Once the window expires, the counter
 In-memory dictionary store. Fast and dependency-free, but **not shared** across multiple processes or workers.
 
 ```python
-from storage.storage import MemoryStorage
+from rateguard import MemoryStorage
 
 storage = MemoryStorage()
 storage.set("key", {"count": 1, "start": 1234567890.0})
@@ -183,19 +200,27 @@ storage.delete("key")
 
 ---
 
+## Publishing to PyPI
+
+```bash
+# Install build tools
+pip install build twine
+
+# Build the distribution
+python -m build
+
+# Upload to PyPI
+twine upload dist/*
+```
+
+---
+
 ## Requirements
 
 | Package            | Version   |
 |--------------------|-----------|
-| fastapi            | ≥ 0.138.2 |
-| pydantic           | ≥ 2.13.4  |
-| starlette          | ≥ 1.3.1   |
-
-Install with:
-
-```bash
-pip install -r requirements.txt
-```
+| fastapi            | ≥ 0.100.0 |
+| starlette          | ≥ 0.27.0  |
 
 ---
 
@@ -211,4 +236,4 @@ pip install -r requirements.txt
 
 ## License
 
-This project is open-source. Feel free to use, modify, and distribute it.
+This project is open-source and available under the MIT License.
