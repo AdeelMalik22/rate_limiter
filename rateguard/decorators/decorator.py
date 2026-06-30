@@ -11,14 +11,14 @@ storage = MemoryStorage()
 
 
 def limit(
-    requests,
-    window,
+    max_retries,
+    ttl,
     key=None
 ):
 
     policy = RateLimitPolicy(
-        limit=requests,
-        window_seconds=window
+        limit=max_retries,
+        window_seconds=ttl
     )
 
 

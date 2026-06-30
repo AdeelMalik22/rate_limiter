@@ -12,7 +12,7 @@ A lightweight, modular **rate limiting library** for [FastAPI](https://fastapi.t
 - ✅ Custom key resolver support for advanced use cases
 - ✅ Pluggable storage backend (in-memory by default, extensible)
 - ✅ Returns `429 Too Many Requests` with `retry_after` metadata
-- ✅ Zero external dependencies beyond FastAPI
+- ✅ Zero external dependencies
 
 ---
 
