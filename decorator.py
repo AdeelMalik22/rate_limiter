@@ -1,10 +1,10 @@
 from functools import wraps
-
-from rateguard.policy import RateLimitPolicy
-from rateguard.storage import MemoryStorage
-from rateguard.algorithms.fixed_window import FixedWindowLimiter
-from rateguard.limiter import RateLimiter
-from rateguard.resolver import KeyResolver
+from fastapi import HTTPException
+from policy import RateLimitPolicy
+from storage import MemoryStorage
+from algorithms.fixed_window import FixedWindowLimiter
+from limiter import RateLimiter
+from resolver import KeyResolver
 
 
 storage = MemoryStorage()
@@ -36,7 +36,6 @@ def limit(
     # 4. Create resolver
     resolver = KeyResolver(key)
 
-
     def decorator(func):
 
         @wraps(func)
@@ -47,21 +46,24 @@ def limit(
                 *args,
                 **kwargs
             )
-            print("client_id: ", client_id)
+            key = f"{func.__name__}:{client_id}"
+
+            print("client_id: ", key)
 
 
             # Check limit
             result = limiter.check(
-                client_id
+                key
             )
 
-
             if not result["allowed"]:
-                return {
-                    "error": "Too many requests",
-                    "retry_after":
-                        result.get("retry_after")
-                }
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "Too many requests",
+                        "retry_after": result.get("retry_after")
+                    }
+                )
 
 
             return func(
