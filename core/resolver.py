@@ -10,18 +10,33 @@ class KeyResolver:
             return self.func(*args, **kwargs)
 
 
-        # auto detect request object
-        for arg in args:
+        request = None
 
+
+        for arg in args:
             if hasattr(arg, "client"):
-                return arg.client.host
+                request = arg
+                break
 
 
         for value in kwargs.values():
-
             if hasattr(value, "client"):
-                return value.client.host
+                request = value
+                break
 
 
+        if request is None:
+            return "anonymous"
 
-        return "anonymous"
+
+        # check if authentication middleware exists
+        if "user" in request.scope:
+
+            user = request.scope["user"]
+
+            if hasattr(user, "id"):
+                return f"user:{user.id}"
+
+
+        # fallback
+        return f"ip:{request.client.host}"
