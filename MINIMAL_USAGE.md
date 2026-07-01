@@ -1,47 +1,61 @@
-# RateGuard Minimal Usage Guide
+# RateGuard Usage Guide
 
-RateGuard is a **framework-agnostic** rate limiting library. While it includes a built-in decorator for FastAPI, its core `RateLimiter` class can be used in **any** Python framework (Flask, Django, Celery, or pure Python scripts).
+RateGuard is a **framework-agnostic** rate limiting library. Its core `RateLimiter` class can be used in **any** Python framework (Flask, Django, FastAPI, Celery, or pure Python scripts). When a limit is hit, RateGuard raises a single generic exception — `RateLimitExceeded` — and it's up to each framework's own error-handling mechanism to turn that into an HTTP response.
 
 ---
 
 ## 1. Framework-Agnostic Usage (Any Python App)
 
-You can use the core `RateLimiter` class directly anywhere in your code.
+Using the `@limit` decorator directly (no framework) raises `RateLimitExceeded`, a plain Python exception with no web-framework dependency:
 
 ```python
-from rateguard import RateLimiter
+from requestguard import limit
+from requestguard import RateLimitExceeded
 
-# Create a limiter: Allow 100 requests every 60 seconds
-limiter = RateLimiter(
-    max_retries=100,
-    ttl=60 #-----> total time limit
-)
+@limit(max_retries=5, ttl=60)
+def do_something(user_id):
+    return "done"
 
-def some_action(user_id: str):
-    # Check the rate limit for this specific user
-    result = limiter.check(user_id)
-    
-    if result["allowed"]:
-        print(f"Action allowed! Remaining requests: {result['remaining']}")
-        # Perform the action...
-    else:
-        print(f"Rate limited. Try again in {result['retry_after']} seconds")
-        # Return an error to the user
+try:
+    do_something("user_42")
+except RateLimitExceeded as exc:
+    print(exc.detail)  # {"error": "Too many requests", "retry_after": 12.4}
 ```
 
 ---
 
-## 2. FastAPI Usage (Built-in Decorator)
+## 2. How Exception Handling Works
 
-If you are using FastAPI, RateGuard provides a convenient `@limit` decorator that automatically handles key resolution (like IP addresses or authenticated users) and throws standard `429 Too Many Requests` HTTP errors.
+`RateLimitExceeded` is **not** an HTTP exception — it carries no status code or framework awareness. Each framework has its own place to catch it and translate it into a `429 Too Many Requests` response. You register this translation **once**, at app startup; you never need to `try/except` it in every view.
+
+```python
+# requestguard/exceptions.py
+class RateLimitExceeded(Exception):
+    def __init__(self, retry_after=None, message="Too many requests"):
+        self.message = message
+        self.retry_after = retry_after
+        self.detail = {"error": message, "retry_after": retry_after}
+        super().__init__(message)
+```
+
+---
+
+### 2a. FastAPI
+
+Register a global exception handler on the `app` instance. FastAPI will call this automatically anytime a view raises `RateLimitExceeded`, anywhere in the call stack.
 
 ```python
 from fastapi import FastAPI, Request
-from rateguard import limit
+from fastapi.responses import JSONResponse
+from requestguard import limit
+from requestguard import RateLimitExceeded
 
 app = FastAPI()
 
-# Limit this endpoint to 5 requests per 60 seconds
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(status_code=429, content=exc.detail)
+
 @limit(max_retries=5, ttl=60)
 def my_endpoint(request: Request):
     return {"message": "Hello!"}
@@ -50,3 +64,111 @@ def my_endpoint(request: Request):
 def hello_route(request: Request):
     return my_endpoint(request)
 ```
+
+No `try/except` needed inside `my_endpoint` — the exception propagates up and FastAPI routes it to the handler.
+
+---
+
+### 2b. Django REST Framework (DRF)
+
+Plug into DRF's `EXCEPTION_HANDLER` setting. This runs for every view using DRF's dispatch, so again — no per-view `try/except` needed.
+
+```python
+# your_app/exceptions.py
+from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from requestguard import RateLimitExceeded
+
+def custom_exception_handler(exc, context):
+    if isinstance(exc, RateLimitExceeded):
+        return Response(exc.detail, status=429)
+    return exception_handler(exc, context)  # fall back to DRF's default
+```
+
+```python
+# settings.py
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "your_app.exceptions.custom_exception_handler",
+}
+```
+
+```python
+from requestguard import limit
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+
+class UserViewSet(viewsets.ModelViewSet):
+    @limit(max_retries=3, ttl=30)
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+```
+
+---
+
+### 2c. Plain Django (no DRF)
+
+DRF's `EXCEPTION_HANDLER` only applies to DRF views. For plain Django views, use middleware's `process_exception` hook instead.
+
+```python
+# your_app/middleware.py
+from django.http import JsonResponse
+from requestguard import RateLimitExceeded
+
+class RateLimitMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_exception(self, request, exception):
+        if isinstance(exception, RateLimitExceeded):
+            return JsonResponse(exception.detail, status=429)
+        return None  # let Django handle everything else normally
+```
+
+```python
+# settings.py
+MIDDLEWARE = [
+    ...,
+    "your_app.middleware.RateLimitMiddleware",
+]
+```
+
+---
+
+### 2d. Flask
+
+Use `@app.errorhandler`, registered once against the exception class.
+
+```python
+from flask import Flask, jsonify
+from requestguard import limit
+from requestguard import RateLimitExceeded
+
+app = Flask(__name__)
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit(exc):
+    return jsonify(exc.detail), 429
+
+@app.route("/hello")
+@limit(max_retries=5, ttl=60)
+def hello_route():
+    return {"message": "Hello!"}
+```
+
+---
+
+## 3. Summary Table
+
+| Framework    | Registration point                          | Where the exception is caught |
+|--------------|----------------------------------------------|--------------------------------|
+| FastAPI      | `@app.exception_handler(RateLimitExceeded)`   | Global, per-app                |
+| DRF          | `REST_FRAMEWORK["EXCEPTION_HANDLER"]`         | Global, all DRF views          |
+| Plain Django | Middleware `process_exception`                | Global, all views              |
+| Flask        | `@app.errorhandler(RateLimitExceeded)`        | Global, per-app                |
+
+The pattern is the same everywhere: **`rateguard` only raises `RateLimitExceeded`; your app registers one handler, once, to turn it into a 429.** No view or endpoint ever needs its own `try/except RateLimitExceeded` block.

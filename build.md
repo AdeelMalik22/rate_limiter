@@ -47,5 +47,5 @@ venv/bin/twine upload dist/*
 Go to [PyPI](https://pypi.org/project/fastapi-rateguard/) and verify your new version is live! Users can now update their package using:
 
 ```bash
-pip install fastapi-rateguard --upgrade
+pip install fastapi-requestguard --upgrade
 ```

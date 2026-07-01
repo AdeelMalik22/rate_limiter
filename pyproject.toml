@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "requestguard"
-version = "0.1.1"
+version = "0.1.4"
 description = "A lightweight, modular rate limiting library for python"
 readme = "MINIMAL_USAGE.md"
 requires-python = ">=3.9"
@@ -19,13 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Framework :: FastAPI",
     "Topic :: Internet :: WWW/HTTP",
     "Topic :: Software Development :: Libraries :: Python Modules",
-]
-dependencies = [
-    "fastapi>=0.100.0",
-    "starlette>=0.27.0",
 ]
 
 
@@ -40,7 +35,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["rateguard*"]
+include = ["requestguard*"]
 
 
 [tool.setuptools.package-data]

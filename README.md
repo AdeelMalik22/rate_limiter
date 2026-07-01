@@ -49,7 +49,7 @@ rateguard/                        ← project root
 
 ```bash
 git clone https://github.com/AdeelMalik22/rateguard.git
-cd rateguard
+cd requestguard
 pip install -e .
 ```
 
@@ -58,7 +58,7 @@ The `-e` flag installs it in **editable mode** — any changes you make to the s
 ### From PyPI *(once published)*
 
 ```bash
-pip install rateguard
+pip install requestguard
 ```
 
 ---
@@ -67,7 +67,7 @@ pip install rateguard
 
 ```python
 from fastapi import FastAPI, Request
-from rateguard import limit
+from requestguard import limit
 
 app = FastAPI()
 
@@ -103,7 +103,7 @@ uvicorn examples.basic_usage:app --reload
 #### Basic — 3 requests per 10 seconds
 
 ```python
-from rateguard import limit
+from requestguard import limit
 
 @limit(requests=3, window=10)
 def my_endpoint(request: Request):
@@ -113,7 +113,7 @@ def my_endpoint(request: Request):
 #### Custom Key Resolver
 
 ```python
-from rateguard import limit
+from requestguard import limit
 
 def resolve_by_api_key(*args, **kwargs):
     request = kwargs.get("request")
@@ -179,7 +179,7 @@ Counts requests within a fixed time window. Once the window expires, the counter
 In-memory dictionary store. Fast and dependency-free, but **not shared** across multiple processes or workers.
 
 ```python
-from rateguard import MemoryStorage
+from requestguard import MemoryStorage
 
 storage = MemoryStorage()
 storage.set("key", {"count": 1, "start": 1234567890.0})

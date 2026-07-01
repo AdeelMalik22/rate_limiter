@@ -6,7 +6,7 @@ Run with:
 """
 
 from fastapi import FastAPI, Request
-from rateguard import limit
+from requestguard import limit
 
 app = FastAPI()
 
