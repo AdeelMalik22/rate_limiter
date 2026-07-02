@@ -1,6 +1,6 @@
 # RateGuard 🛡️
 
-A lightweight, modular **rate limiting library** for [FastAPI](https://fastapi.tiangolo.com/) applications. RateGuard provides a clean decorator-based API to protect your endpoints from abuse, with pluggable algorithms and storage backends.
+A lightweight, modular **rate limiting library** for Python applications. RateGuard provides a clean decorator-based API to protect your endpoints from abuse, with pluggable algorithms and storage backends.
 
 ---
 
