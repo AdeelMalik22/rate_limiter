@@ -39,21 +39,56 @@ RateGuard supports multiple rate-limiting algorithms. By default, it uses the **
 from requestguard import limit, Algorithm
 
 # Fixed Window (Default)
+# max_retries = Maximum requests allowed per window
+# ttl = Window duration (seconds)
+#
+# Example:
+# max_retries = 5, ttl = 60
+# Window = 60 seconds
+#
+# A client can send up to 5 requests within any 60-second window.
+# The 6th request is rejected until the current window expires.
+# After 60 seconds, the counter resets and another 5 requests are allowed.
+
 @limit(max_retries=5, ttl=60)
 def fixed_window_endpoint():
     pass
 
 # Token Bucket
-# max_retries = Capacity (burst size)
+# max_retries = Bucket Capacity (maximum number of tokens)
 # ttl = Refill window (refill rate = max_retries / ttl)
-# Example below: Burst of 10, refills at 10/60 = 0.16 tokens per second
+#
+# Example:
+# max_retries = 10, ttl = 60
+# Capacity = 10 tokens
+# Refill Rate = 10 / 60 = 0.16 tokens/second
+#
+# A client can send 10 requests instantly (burst).
+# After that:
+# - 1 new request becomes available every 6 seconds.
+# - After 30 seconds, about 5 tokens are regenerated.
+# - After 60 seconds, the bucket is full again (10 tokens).
+
 @limit(max_retries=10, ttl=60, algorithm=Algorithm.TOKEN_BUCKET)
 def token_bucket_endpoint():
     pass
 
+
 # Leaky Bucket
-# max_retries = Bucket Capacity (queue size)
+# max_retries = Bucket Capacity (maximum water level)
 # ttl = Drain window (leak rate = max_retries / ttl)
+#
+# Example:
+# max_retries = 10, ttl = 60
+# Capacity = 10 requests
+# Leak Rate = 10 / 60 = 0.16 requests/second
+#
+# A client can send 10 requests instantly, filling the bucket.
+# After that:
+# - 1 request worth of space becomes available every 6 seconds.
+# - After 30 seconds, space for about 5 new requests is available.
+# - After 60 seconds (without new requests), the bucket is completely empty.
+
 @limit(max_retries=10, ttl=60, algorithm=Algorithm.LEAKY_BUCKET)
 def leaky_bucket_endpoint():
     pass
