@@ -7,7 +7,7 @@ A lightweight, modular **rate limiting library** for [FastAPI](https://fastapi.t
 ## Features
 
 - ✅ Simple `@limit` decorator — drop onto any route handler
-- ✅ **Fixed Window** and **Token Bucket** algorithms out of the box
+- ✅ **Fixed Window**, **Token Bucket**, and **Leaky Bucket** algorithms out of the box
 - ✅ Smart key resolution — auto-detects authenticated users or falls back to client IP
 - ✅ Custom key resolver support for advanced use cases
 - ✅ Pluggable storage backend (in-memory by default, extensible)
@@ -26,7 +26,8 @@ rateguard/                        ← project root
 │   ├── algorithms/
 │   │   ├── registry.py           # Algorithm factory/registry
 │   │   ├── fixed_window.py       # Fixed Window rate limiting algorithm
-│   │   └── token_bucket.py       # Token Bucket rate limiting algorithm
+│   │   ├── token_bucket.py       # Token Bucket rate limiting algorithm
+│   │   └── leaky_bucket.py       # Leaky Bucket rate limiting algorithm
 │   ├── core/
 │   │   ├── limiter.py            # RateLimiter — orchestrates algorithm checks
 │   │   ├── policy.py             # RateLimitPolicy — limit & window config
@@ -190,6 +191,13 @@ Allows up to a maximum capacity of tokens (requests), continuously refilling tok
 
 - **Pros**: Extremely smooth rate limiting, allows for bursts while maintaining a steady long-term rate
 - **Cons**: Slightly more floating-point math overhead
+
+### Leaky Bucket (`Algorithm.LEAKY_BUCKET`)
+
+Requests are added to a bucket that "leaks" (processes) them at a constant rate. If the bucket overflows, requests are rejected. Effectively acts as a steady-paced rate limiter.
+
+- **Pros**: Enforces a strict, steady output rate without bursts
+- **Cons**: Can penalize bursty traffic immediately if the bucket is full
 
 ### Returned State
 

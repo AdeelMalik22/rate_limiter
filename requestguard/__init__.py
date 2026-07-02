@@ -17,6 +17,7 @@ from requestguard.core.resolver import KeyResolver
 from requestguard.storage.storage import MemoryStorage
 from requestguard.algorithms.fixed_window import FixedWindowLimiter
 from requestguard.algorithms.token_bucket import TokenBucketLimiter
+from requestguard.algorithms.leaky_bucket import LeakyBucketLimiter
 from requestguard.core.exceptions import RateLimitExceeded
 from requestguard.core.enums import Algorithm
 from requestguard.algorithms.registry import get_algorithm, register_algorithm
@@ -29,6 +30,7 @@ __all__ = [
     "MemoryStorage",
     "FixedWindowLimiter",
     "TokenBucketLimiter",
+    "LeakyBucketLimiter",
     "RateLimitExceeded",
     "Algorithm",
     "get_algorithm",

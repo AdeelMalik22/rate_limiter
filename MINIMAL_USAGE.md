@@ -33,6 +33,7 @@ RateGuard supports multiple rate-limiting algorithms. By default, it uses the **
 **Available Algorithms:**
 - `Algorithm.FIXED_WINDOW`: Counts requests in a fixed time window. Resets completely at the end of the window. Simple and predictable.
 - `Algorithm.TOKEN_BUCKET`: Allows up to a maximum capacity of requests, continuously refilling them at a constant rate over time. Ideal for smooth traffic shaping and allowing temporary bursts.
+- `Algorithm.LEAKY_BUCKET`: Acts as a queue (bucket) that leaks at a constant rate. If requests fill up the bucket faster than it leaks, they are rejected. Great for enforcing a strict, steady rate limit.
 
 ```python
 from requestguard import limit, Algorithm
@@ -48,6 +49,13 @@ def fixed_window_endpoint():
 # Example below: Burst of 10, refills at 10/60 = 0.16 tokens per second
 @limit(max_retries=10, ttl=60, algorithm=Algorithm.TOKEN_BUCKET)
 def token_bucket_endpoint():
+    pass
+
+# Leaky Bucket
+# max_retries = Bucket Capacity (queue size)
+# ttl = Drain window (leak rate = max_retries / ttl)
+@limit(max_retries=10, ttl=60, algorithm=Algorithm.LEAKY_BUCKET)
+def leaky_bucket_endpoint():
     pass
 ```
 

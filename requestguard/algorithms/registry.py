@@ -2,10 +2,12 @@ from typing import Dict, Type
 from requestguard.core.enums import Algorithm
 from requestguard.algorithms.fixed_window import FixedWindowLimiter
 from requestguard.algorithms.token_bucket import TokenBucketLimiter
+from requestguard.algorithms.leaky_bucket import LeakyBucketLimiter
 
 _REGISTRY: Dict[Algorithm, Type] = {
     Algorithm.FIXED_WINDOW: FixedWindowLimiter,
-    Algorithm.TOKEN_BUCKET: TokenBucketLimiter
+    Algorithm.TOKEN_BUCKET: TokenBucketLimiter,
+    Algorithm.LEAKY_BUCKET: LeakyBucketLimiter
 }
 
 def get_algorithm(algorithm: Algorithm) -> Type:
