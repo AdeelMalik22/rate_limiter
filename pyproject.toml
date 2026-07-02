@@ -10,7 +10,42 @@ description = "A framework-agnostic, modular rate limiting library for Python wi
 readme = "MINIMAL_USAGE.md"
 requires-python = ">=3.9"
 license = "MIT"
-keywords = ["rate-limiting", "fastapi", "api", "throttling", "middleware"]
+keywords = [
+    "rate-limiting",
+    "rate-limiter",
+    "request-limiter",
+    "requestguard",
+    "python",
+    "api",
+    "throttling",
+    "traffic-control",
+    "middleware",
+    "decorator",
+    "token-bucket",
+    "leaky-bucket",
+    "fixed-window",
+    "distributed-rate-limiting",
+    "in-memory",
+    "redis",
+    "backend",
+    "cache",
+    "web",
+    "http",
+    "rest-api",
+    "microservices",
+    "framework-agnostic",
+    "concurrency",
+    "api-security",
+    "dos-protection",
+    "abuse-prevention",
+    "request-throttling",
+    "traffic-shaping",
+    "quota",
+    "burst-control",
+    "networking",
+    "performance",
+    "scalability",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
